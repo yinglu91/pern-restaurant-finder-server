@@ -19,7 +19,7 @@ app.post('/api/v1/restaurants', async (req, res) => {
       'INSERT INTO restaurants (name, location, price_range) VALUES($1, $2, $3) RETURNING *',
       [name, location, price_range]
     );
-    // 'RETURNING *' works for insert/update/delete
+    // 'RETURNING *' works for insert/update
 
     res
       .status(201)
@@ -48,11 +48,21 @@ app.get('/api/v1/restaurants', async (req, res) => {
 app.get('/api/v1/restaurants/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const results = await pool.query('SELECT * FROM restaurants WHERE id=$1', [
-      id,
-    ]);
 
-    res.json({ status: 'success', data: { restaurant: results.rows[0] } });
+    const restaurant = await pool.query(
+      'SELECT * FROM restaurants WHERE id=$1',
+      [id]
+    );
+
+    const reviews = await pool.query(
+      'SELECT * FROM reviews WHERE restaurant_id=$1',
+      [id]
+    );
+
+    res.json({
+      status: 'success',
+      data: { restaurant: restaurant.rows[0], reviews: reviews.rows },
+    });
   } catch (err) {
     console.error(err.message);
   }
@@ -94,7 +104,30 @@ app.delete('/api/v1/restaurants/:id', async (req, res) => {
   }
 });
 
-const port = process.env.PORT || 3001;
+// reviews
+
+// create a review for specified restaurant
+
+app.post('/api/v1/restaurants/:id/addReview', async (req, res) => {
+  try {
+    const { id: restaurantId } = req.params;
+    const { name, review, rating } = req.body;
+
+    const results = await pool.query(
+      'INSERT INTO reviews (restaurant_id, name, review, rating) VALUES($1, $2, $3, $4) RETURNING *',
+      [restaurantId, name, review, rating]
+    );
+    // 'RETURNING *' works for insert/update
+
+    res
+      .status(201)
+      .json({ status: 'success', data: { review: results.rows[0] } });
+  } catch (err) {
+    console.error(err.message);
+  }
+});
+
+const port = process.env.PORT || 5000;
 app.listen(port, () => {
   console.log(`Server has started on port ${port}.`);
 });

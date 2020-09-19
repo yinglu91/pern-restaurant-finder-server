@@ -36,3 +36,11 @@ CREATE TABLE reviews(
     and rating <= 5
   )
 );
+--
+--
+insert into reviews (restaurant_id, name, review, rating)
+values(3, 'Ying', 'good food', 4);
+insert into reviews (restaurant_id, name, review, rating)
+values(3, 'Frank', 'so so food', 2);
+insert into reviews (restaurant_id, name, review, rating)
+values(3, 'Damien', 'I dont like food', 1);
