@@ -1,0 +1,103 @@
+require('dotenv').config();
+const express = require('express');
+const app = express();
+const cors = require('cors');
+const pool = require('./db');
+
+// middleware
+app.use(cors());
+app.use(express.json()); // req.body
+
+// routes
+
+// create a restaurant
+
+app.post('/api/v1/restaurants', async (req, res) => {
+  try {
+    const { name, location, price_range } = req.body;
+    const results = await pool.query(
+      'INSERT INTO restaurants (name, location, price_range) VALUES($1, $2, $3) RETURNING *',
+      [name, location, price_range]
+    );
+    // 'RETURNING *' works for insert/update/delete
+
+    res
+      .status(201)
+      .json({ status: 'success', data: { restaurant: results.rows[0] } });
+  } catch (err) {
+    console.error(err.message);
+  }
+});
+
+// get all restaurants
+
+app.get('/api/v1/restaurants', async (req, res) => {
+  try {
+    const allRestaurants = await pool.query('SELECT * FROM restaurants');
+
+    res
+      .status(200)
+      .json({ status: 'success', data: { restaurants: allRestaurants.rows } });
+  } catch (err) {
+    console.error(err.message);
+  }
+});
+
+// get a restaurant
+
+app.get('/api/v1/restaurants/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const results = await pool.query('SELECT * FROM restaurants WHERE id=$1', [
+      id,
+    ]);
+
+    res.json({ status: 'success', data: { restaurant: results.rows[0] } });
+  } catch (err) {
+    console.error(err.message);
+  }
+});
+
+// update a restaurant
+
+app.put('/api/v1/restaurants/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, location, price_range } = req.body;
+
+    const results = await pool.query(
+      'UPDATE restaurants SET name = $1, location = $2, price_range = $3 WHERE id = $4 RETURNING *',
+      [name, location, price_range, id]
+    );
+
+    res
+      .status(200)
+      .json({ status: 'success', data: { restaurant: results.rows[0] } });
+  } catch (err) {
+    console.error(err.message);
+  }
+});
+
+// delete a restaurant
+
+app.delete('/api/v1/restaurants/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleteRestaurant = await pool.query(
+      'DELETE FROM restaurants WHERE id = $1',
+      [id]
+    );
+
+    res.status(204).json({ status: 'success' });
+  } catch (err) {
+    console.error(err.message);
+  }
+});
+
+const port = process.env.PORT || 3001;
+app.listen(port, () => {
+  console.log(`Server has started on port ${port}.`);
+});
+
+// https://www.youtube.com/watch?v=J01rYl9T3BU
+// PERN Stack Course - Build a Yelp clone (Postgres, Express, React, Node.js), and Node 8/14/2020
