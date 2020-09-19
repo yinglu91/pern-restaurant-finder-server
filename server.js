@@ -33,11 +33,19 @@ app.post('/api/v1/restaurants', async (req, res) => {
 
 app.get('/api/v1/restaurants', async (req, res) => {
   try {
-    const allRestaurants = await pool.query('SELECT * FROM restaurants');
+    const restaurantRatingsData = await pool.query(
+      `SELECT * FROM restaurants LEFT JOIN 
+        (SELECT restaurant_id, COUNT(*), TRUNC(AVG(rating), 1) AS average_rating 
+          FROM reviews 
+          GROUP BY restaurant_id) reviews 
+        ON restaurants.id = reviews.restaurant_id`
+    );
 
-    res
-      .status(200)
-      .json({ status: 'success', data: { restaurants: allRestaurants.rows } });
+    res.status(200).json({
+      status: 'success',
+      results: restaurantRatingsData.rows.length,
+      data: { restaurants: restaurantRatingsData.rows },
+    });
   } catch (err) {
     console.error(err.message);
   }
@@ -50,7 +58,12 @@ app.get('/api/v1/restaurants/:id', async (req, res) => {
     const { id } = req.params;
 
     const restaurant = await pool.query(
-      'SELECT * FROM restaurants WHERE id=$1',
+      `SELECT * FROM restaurants LEFT JOIN 
+          (SELECT restaurant_id, COUNT(*), TRUNC(AVG(rating), 1) AS average_rating 
+            FROM reviews 
+            GROUP BY restaurant_id) reviews 
+          ON restaurants.id = reviews.restaurant_id
+          WHERE id=$1`,
       [id]
     );
 
@@ -89,6 +102,9 @@ app.put('/api/v1/restaurants/:id', async (req, res) => {
 });
 
 // delete a restaurant
+
+// can't delete if it has review
+// update or delete on table "restaurants" violates foreign key constraint "reviews_restaurant_id_fkey" on table "reviews"
 
 app.delete('/api/v1/restaurants/:id', async (req, res) => {
   try {
@@ -132,5 +148,6 @@ app.listen(port, () => {
   console.log(`Server has started on port ${port}.`);
 });
 
+// https://github.com/Sanjeev-Thiyagarajan/PERN-STACK-YELP-CLONE.git
 // https://www.youtube.com/watch?v=J01rYl9T3BU
-// PERN Stack Course - Build a Yelp clone (Postgres, Express, React, Node.js), and Node 8/14/2020
+// PERN Stack Course - Build a Yelp clone (Postgres, Express, React, Node.js), 6:20 and Node 8/14/2020

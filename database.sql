@@ -44,3 +44,23 @@ insert into reviews (restaurant_id, name, review, rating)
 values(3, 'Frank', 'so so food', 2);
 insert into reviews (restaurant_id, name, review, rating)
 values(3, 'Damien', 'I dont like food', 1);
+--
+--
+select trunc(avg(rating), 3) as average_review
+from reviews;
+select *
+from reviews;
+--
+--all restaurants
+`SELECT * FROM restaurants LEFT JOIN 
+        (SELECT restaurant_id, COUNT(*), TRUNC(AVG(rating), 1) AS average_rating 
+          FROM reviews 
+          GROUP BY restaurant_id) reviews 
+        ON restaurants.id = reviews.restaurant_id` --
+-- a restaurant
+`SELECT * FROM restaurants LEFT JOIN 
+        (SELECT restaurant_id, COUNT(*), TRUNC(AVG(rating), 1) AS average_rating 
+          FROM reviews 
+          GROUP BY restaurant_id) reviews 
+        ON restaurants.id = reviews.restaurant_id
+        WHERE id=3`
